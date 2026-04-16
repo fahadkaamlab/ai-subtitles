@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Transcriber & Translator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .status-text {
+            text-align: center;
+            color: #666;
+            margin-top: 15px;
+        }
+
+        .video-preview {
+            width: 100%;
+            max-height: 300px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: #000;
+        }
+
+        .transcript-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            background: #f8f9ff;
+        }
+
+        .transcript-line {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .transcript-line:last-child {
+            border-bottom: none;
+        }
+
+        .timestamp {
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Video Transcriber & Translator</h1>
+
+        <!-- Step 1: Language Selection -->
+        <div id="step1" class="step active">
+            <div class="form-group">
+                <label for="sourceLanguage">Select the language spoken in the video:</label>
+                <select id="sourceLanguage">
+                    <option value="">-- Choose Language --</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="zh">Chinese (Mandarin)</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="ar">Arabic</option>
+                    <option value="hi">Hindi</option>
+                    <option value="nl">Dutch</option>
+                    <option value="pl">Polish</option>
+                    <option value="tr">Turkish</option>
+                </select>
+            </div>
+            <button class="btn" onclick="goToStep(2)">Next: Upload Video</button>
+        </div>
+
+        <!-- Step 2: Video Upload -->
+        <div id="step2" class="step">
+            <div class="form-group">
+                <label>Upload your video file:</label>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p>Drag and drop your video here or click to browse</p>
+                    <p style="color: #999; font-size: 14px; margin-top: 10px;">Supported formats: MP4, AVI, MOV, WEBM, MKV</p>
+                    <input type="file" id="videoFile" accept="video/*" style="display: none;">
+                </div>
+            </div>
+            <div id="videoPreviewContainer" class="hidden">
+                <video id="videoPreview" class="video-preview" controls></video>
+                <p id="fileName" style="text-align: center; color: #666; margin: 10px 0;"></p>
+            </div>
+            <button class="btn" id="transcribeBtn" onclick="startTranscription()" disabled>Start Transcription</button>
+        </div>
+
+        <!-- Step 3: Transcription Progress -->
+        <div id="step3" class="step">
+            <div class="progress-container">
+                <h3 style="text-align: center; margin-bottom: 20px;">Transcribing Video...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="transcribeProgress"></div>
+                </div>
+                <p class="status-text" id="transcribeStatus">Processing audio...</p>
+            </div>
+            <div id="transcriptResult" class="transcript-container hidden"></div>
+        </div>
+
+        <!-- Step 4: Translation Selection -->
+        <div id="step4" class="step">
+            <div class="success-message">
+                ✅ Transcription completed successfully!
+            </div>
+            <div class="form-group">
+                <label for="targetLanguage">Select language to translate subtitles to:</label>
+                <select id="targetLanguage">
+                    <option value="">-- Choose Target Language --</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="zh">Chinese (Mandarin)</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="ar">Arabic</option>
+                    <option value="hi">Hindi</option>
+                    <option value="nl">Dutch</option>
+                    <option value="pl">Polish</option>
+                    <option value="tr">Turkish</option>
+                </select>
+            </div>
+            <button class="btn" id="translateBtn" onclick="startTranslation()" disabled>Generate Subtitle File</button>
+        </div>
+
+        <!-- Step 5: Download -->
+        <div id="step5" class="step">
+            <div class="success-message">
+                ✅ Subtitle file generated successfully!
+            </div>
+            <div class="transcript-container" id="translatedSubtitles"></div>
+            <button class="btn download-btn" onclick="downloadSubtitles()">📥 Download SRT File</button>
+            <button class="btn" onclick="resetApp()" style="margin-top: 15px; background: #6c757d;">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedFile = null;
+        let transcriptData = [];
+        let translatedSubtitles = '';
+
+        const languageNames = {
+            'en': 'English',
+            'es': 'Spanish',
+            'fr': 'French',
+            'de': 'German',
+            'it': 'Italian',
+            'pt': 'Portuguese',
+            'ru': 'Russian',
+            'zh': 'Chinese',
+            'ja': 'Japanese',
+            'ko': 'Korean',
+            'ar': 'Arabic',
+            'hi': 'Hindi',
+            'nl': 'Dutch',
+            'pl': 'Polish',
+            'tr': 'Turkish'
+        };
+
+        function goToStep(step) {
+            // Validate before proceeding
+            if (step === 2) {
+                const sourceLang = document.getElementById('sourceLanguage').value;
+                if (!sourceLang) {
+                    alert('Please select a language first!');
+                    return;
+                }
+            }
+
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            
+            // Show target step
+            document.getElementById(`step${step}`).classList.add('active');
+            currentStep = step;
+        }
+
+        // Upload area handling
+        const uploadArea = document.getElementById('uploadArea');
+        const videoFileInput = document.getElementById('videoFile');
+
+        uploadArea.addEventListener('click', () => videoFileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('video/')) {
+                handleFileSelect(files[0]);
+            } else {
+                alert('Please drop a valid video file!');
+            }
+        });
+
+        videoFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+            
+            const videoPreview = document.getElementById('videoPreview');
+            const videoURL = URL.createObjectURL(file);
+            videoPreview.src = videoURL;
+            
+            document.getElementById('uploadArea').classList.add('hidden');
+            document.getElementById('videoPreviewContainer').classList.remove('hidden');
+            document.getElementById('transcribeBtn').disabled = false;
+        }
+
+        function startTranscription() {
+            if (!selectedFile) {
+                alert('Please select a video file first!');
+                return;
+            }
+
+            goToStep(3);
+            
+            const progressBar = document.getElementById('transcribeProgress');
+            const statusText = document.getElementById('transcribeStatus');
+            const statuses = [
+                'Extracting audio from video...',
+                'Processing audio waveform...',
+                'Identifying speech segments...',
+                'Transcribing with timestamps...',
+                'Finalizing transcription...'
+            ];
+
+            let progress = 0;
+            let statusIndex = 0;
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 15 + 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    // Generate mock transcription
+                    generateMockTranscription();
+                    
+                    setTimeout(() => {
+                        document.getElementById('transcriptResult').classList.remove('hidden');
+                        document.getElementById('transcriptResult').innerHTML = transcriptData.map(t => 
+                            `<div class="transcript-line"><span class="timestamp">[${t.timestamp}]</span>${t.text}</div>`
+                        ).join('');
+                        
+                        setTimeout(() => goToStep(4), 1000);
+                    }, 500);
+                }
+                
+                progressBar.style.width = `${progress}%`;
+                
+                if (progress > (statusIndex + 1) * 20 && statusIndex < statuses.length - 1) {
+                    statusIndex++;
+                    statusText.textContent = statuses[statusIndex];
+                }
+            }, 300);
+        }
+
+        function generateMockTranscription() {
+            // Mock transcription data - in real app, this would come from backend
+            const mockTexts = [
+                "Welcome to this video tutorial.",
+                "Today we're going to learn something amazing.",
+                "Let's get started with the basics.",
+                "First, you need to understand the fundamentals.",
+                "Now let's move on to more advanced topics.",
+                "This is really exciting, isn't it?",
+                "Remember to practice regularly.",
+                "Thanks for watching this video!",
+                "Don't forget to subscribe for more content.",
+                "See you in the next video!"
+            ];
+
+            transcriptData = mockTexts.map((text, index) => ({
+                startTime: index * 5,
+                endTime: index * 5 + 4,
+                timestamp: formatTime(index * 5) + ' --> ' + formatTime(index * 5 + 4),
+                text: text
+            }));
+        }
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+        }
+
+        function startTranslation() {
+            const targetLang = document.getElementById('targetLanguage').value;
+            if (!targetLang) {
+                alert('Please select a target language!');
+                return;
+            }
+
+            // Simulate translation
+            const targetLangName = languageNames[targetLang];
+            
+            // In a real app, this would call a translation API
+            // For demo, we'll just add a prefix to show translation happened
+            translatedSubtitles = transcriptData.map((t, index) => {
+                return `${index + 1}\n${t.timestamp}\n[Translated to ${targetLangName}]: ${t.text}\n`;
+            }).join('\n');
+
+            // Display translated subtitles
+            const container = document.getElementById('translatedSubtitles');
+            container.innerHTML = transcriptData.map(t => 
+                `<div class="transcript-line"><span class="timestamp">[${t.timestamp}]</span>[${targetLangName}] ${t.text}</div>`
+            ).join('');
+
+            goToStep(5);
+        }
+
+        function downloadSubtitles() {
+            const blob = new Blob([translatedSubtitles], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'subtitles.srt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetApp() {
+            currentStep = 1;
+            selectedFile = null;
+            transcriptData = [];
+            translatedSubtitles = '';
+            
+            document.getElementById('sourceLanguage').value = '';
+            document.getElementById('targetLanguage').value = '';
+            document.getElementById('videoFile').value = '';
+            document.getElementById('uploadArea').classList.remove('hidden');
+            document.getElementById('videoPreviewContainer').classList.add('hidden');
+            document.getElementById('transcribeBtn').disabled = true;
+            document.getElementById('transcribeProgress').style.width = '0%';
+            document.getElementById('transcriptResult').classList.add('hidden');
+            document.getElementById('translatedSubtitles').innerHTML = '';
+            
+            goToStep(1);
+        }
+    </script>
+</body>
+</html>
